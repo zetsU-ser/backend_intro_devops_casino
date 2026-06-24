@@ -32,6 +32,19 @@ app.get('/health', async (req, res) => {
   }
 });
 
+app.get('/live', (req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime() });
+});
+
+app.get('/ready', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ status: 'ok', db: 'up' });
+  } catch (err) {
+    res.status(503).json({ status: 'down', db: 'down', error: err.message });
+  }
+});
+
 // Bienvenida
 app.get('/', (req, res) => {
   res.json({

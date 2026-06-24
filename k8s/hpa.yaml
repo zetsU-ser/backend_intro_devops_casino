@@ -1,0 +1,25 @@
+# Definición de la API de Kubernetes para el Autoescalado Horizontal (HPA)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  # Nombre del recurso HPA
+  name: casino-backend-hpa
+  namespace: default
+spec:
+  # Referencia al Deployment que este HPA va a escalar
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: casino-backend
+  # Límites de réplicas permitidas
+  minReplicas: 2
+  maxReplicas: 10
+  # Métricas que disparan el escalado
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        # Escalará cuando el uso promedio de CPU supere el 50% del Request
+        target:
+          type: Utilization
+          averageUtilization: 50
