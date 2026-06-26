@@ -1,0 +1,92 @@
+# =========================================================================
+# docker-compose.yml
+# Vidal Casino - Orquestación de Frontend, Backend y PostgreSQL
+# =========================================================================
+
+services:
+
+  # --------------------------------------------------------
+  # Base de Datos (PostgreSQL)
+  # --------------------------------------------------------
+  db:
+    build:
+      context: ./db
+      dockerfile: Dockerfile
+    image: vidal-db:1.0
+    container_name: vidal-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=vidal_admin
+      - POSTGRES_PASSWORD=tu_password_seguro
+      - POSTGRES_DB=vidal_casino_db
+    volumes:
+      - datos-vidal:/var/lib/postgresql/data
+    networks:
+      - red-vidal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vidal_admin -d vidal_casino_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # --------------------------------------------------------
+  # Backend API (Node.js / Express)
+  # --------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: vidal-backend:1.0
+    container_name: vidal-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=vidal_admin
+      - DB_PASSWORD=tu_password_seguro
+      - DB_NAME=vidal_casino_db
+      - JWT_SECRET=tu_secreto_jwt
+      - CORS_ORIGIN=*
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - red-vidal
+    restart: unless-stopped
+
+  # --------------------------------------------------------
+  # Frontend (Angular servido por Nginx Unprivileged)
+  # --------------------------------------------------------
+  frontend:
+    build:
+      context: ../frontend_intro_devops_casino
+      dockerfile: Dockerfile
+    image: vidal-frontend:1.0
+    container_name: vidal-frontend
+    ports:
+      - "80:8080" # Mapea puerto 80 del host al puerto 8080 del contenedor unprivileged
+    environment:
+      - BACKEND_HOST=backend
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - red-vidal
+    restart: unless-stopped
+
+# ---------------------------------------------------------
+# Red puente aislada para la comunicación interna
+# ---------------------------------------------------------
+networks:
+  red-vidal:
+    driver: bridge
+
+# ---------------------------------------------------------
+# Volumen nombrado para la persistencia de datos de Postgres
+# ---------------------------------------------------------
+volumes:
+  datos-vidal:
