@@ -93,14 +93,14 @@ spec:
           # Sonda de Liveness: Verifica que la aplicación esté viva
           livenessProbe:
             httpGet:
-              path: /live
+              path: /livez
               port: 3000
             initialDelaySeconds: 15
             periodSeconds: 10
           # Sonda de Readiness: Verifica que la aplicación pueda recibir tráfico
           readinessProbe:
             httpGet:
-              path: /ready
+              path: /readyz
               port: 3000
             initialDelaySeconds: 10
             periodSeconds: 5
